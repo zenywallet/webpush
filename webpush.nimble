@@ -17,3 +17,7 @@ task bearssl, "Build BearSSL":
     exec "make -j$(nproc)"
     exec "mkdir -p ../../src/lib/bearssl"
     exec "cp build/libbearssl.a ../../src/lib/bearssl/"
+
+before install:
+  exec "git submodule update --init"
+  bearsslTask()

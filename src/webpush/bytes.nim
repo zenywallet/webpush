@@ -119,10 +119,10 @@ proc toBytes*(obj: ref tuple | ref object | ptr tuple | ptr object): seq[byte] =
     s.add(b)
   concat(s)
 
-proc toBytes*(buf: ptr UncheckedArray[byte], size: SomeInteger): seq[byte] =
+proc toBytes*(buf: ptr UncheckedArray[byte] | ptr uint8 | pointer, size: SomeInteger): seq[byte] =
   result = newSeqOfCap[byte](size)
   for i in 0..<size:
-    result.add(buf[i])
+    result.add(cast[ptr UncheckedArray[byte]](buf)[i])
 
 proc Bytes*(args: varargs[seq[byte], toBytes]): seq[byte] = concat(args)
 

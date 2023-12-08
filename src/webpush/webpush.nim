@@ -41,6 +41,14 @@ proc genKey*(): WebPushKeyPair =
   result.sk = br_ec_private_key(curve: sk.curve, x: addr result.prv[0], xlen: sk.xlen)
   result.pk = br_ec_public_key(curve: pk.curve, q: addr result.pub[0], qlen: pk.qlen)
 
+proc clear*(pair: var WebPushKeyPair) =
+  zeroMem(addr pair.sk, sizeof(pair.sk))
+  zeroMem(addr pair.pk, sizeof(pair.pk))
+  zeroMem(addr pair.prv[0], pair.prv.len)
+  zeroMem(addr pair.pub[0], pair.pub.len)
+  pair.prv = @[]
+  pair.pub = @[]
+
 proc save*(pair: WebPushKeyPair, keyFilePath: string = "privkey.pem") =
   var derLen = br_encode_ec_raw_der(nil, addr pair.sk, addr pair.pk)
   doAssert derLen > 0

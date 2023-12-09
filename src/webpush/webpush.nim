@@ -57,13 +57,20 @@ proc save*(pair: WebPushKeyPair, keyFilePath: string = "privkey.pem") =
   doAssert derLen > 0
 
   var pemlen = br_pem_encode(nil, nil, derLen, "EC PRIVATE KEY", 0)
-  var pemBuf = alloc0(pemlen + 1)
+  var pemBuf = cast[ptr UncheckedArray[byte]](alloc0(pemlen + 1))
   var pemlen2 = br_pem_encode(pemBuf, buf, derLen, "EC PRIVATE KEY", 0)
   doAssert pemlen == pemlen2
 
   var f = open(keyFilePath, fmWrite)
-  var wlen = f.writeBuffer(pemBuf, pemlen)
-  doAssert wlen == pemlen.int
+  var pos = 0
+  var left = pemlen
+  while left > 0:
+    var wlen = f.writeBuffer(addr pemBuf[pos], left)
+    if wlen > 0:
+      inc(pos, wlen)
+      dec(left, wlen)
+    else:
+      raise
   f.close()
 
   dealloc(pemBuf)

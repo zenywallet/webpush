@@ -247,3 +247,6 @@ proc loadKey*(keyFilePath: string = "privkey.pem"): WebPushKeyPair =
       freeCertPrivateKey(privObj)
       break
   clearPemObjs(pemObjs)
+
+proc isValid*(pair: var WebPushKeyPair): bool =
+  (pair.prv.len == WebPushPrvKeyLen and pair.pub.len == WebPushPubKeyLen)

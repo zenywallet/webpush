@@ -250,3 +250,13 @@ proc loadKey*(keyFilePath: string = "privkey.pem"): WebPushKeyPair =
 
 proc isValid*(pair: var WebPushKeyPair): bool =
   (pair.prv.len == WebPushPrvKeyLen and pair.pub.len == WebPushPubKeyLen)
+
+
+when isMainModule:
+  var pair = loadKey()
+  if not pair.isValid():
+    pair = genKey()
+    pair.save()
+  echo "prv: ", pair.prv
+  echo "pub: ", pair.pub
+  pair.clear()

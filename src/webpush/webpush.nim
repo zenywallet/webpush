@@ -15,8 +15,8 @@ const WebPushPubKeyLen* = 65
 
 type
   WebPushKeyPair* = object
-    prv: seq[byte]
-    pub: seq[byte]
+    prv*: seq[byte]
+    pub*: seq[byte]
     sk: br_ec_private_key
     pk: br_ec_public_key
 

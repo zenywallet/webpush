@@ -1,3 +1,10 @@
+# https://github.com/web-push-libs/ecec
+# include/ece.h
+
+type
+  uint8_t = uint8
+  uint32_t = uint32
+
 const
   ECE_SALT_LENGTH* = 16
   ECE_TAG_LENGTH* = 16
@@ -99,7 +106,7 @@ proc ece_webpush_generate_keys*(rawRecvPrivKey: ptr uint8_t;
                                rawRecvPrivKeyLen: csize_t;
                                rawRecvPubKey: ptr uint8_t;
                                rawRecvPubKeyLen: csize_t; authSecret: ptr uint8_t;
-                               authSecretLen: csize_t): cint
+                               authSecretLen: csize_t): cint {.importc, cdecl.}
 ## !
 ##  Calculates the maximum "aes128gcm" plaintext length. The caller should
 ##  allocate and pass an array of this length to the "aes128gcm" decryption
@@ -115,7 +122,7 @@ proc ece_webpush_generate_keys*(rawRecvPrivKey: ptr uint8_t;
 ##                        header is truncated or invalid.
 ##
 
-proc ece_aes128gcm_plaintext_max_length*(payload: ptr uint8_t; payloadLen: csize_t): csize_t
+proc ece_aes128gcm_plaintext_max_length*(payload: ptr uint8_t; payloadLen: csize_t): csize_t {.importc, cdecl.}
 ## !
 ##  Decrypts a message encrypted using the "aes128gcm" scheme, with a symmetric
 ##  key. The key is shared out of band, and identified by the `keyId` parameter
@@ -142,7 +149,7 @@ proc ece_aes128gcm_plaintext_max_length*(payload: ptr uint8_t; payloadLen: csize
 
 proc ece_aes128gcm_decrypt*(ikm: ptr uint8_t; ikmLen: csize_t; payload: ptr uint8_t;
                            payloadLen: csize_t; plaintext: ptr uint8_t;
-                           plaintextLen: ptr csize_t): cint
+                           plaintextLen: ptr csize_t): cint {.importc, cdecl.}
 ## !
 ##  Decrypts a Web Push message encrypted using the "aes128gcm" scheme.
 ##
@@ -172,7 +179,7 @@ proc ece_webpush_aes128gcm_decrypt*(rawRecvPrivKey: ptr uint8_t;
                                    authSecret: ptr uint8_t; authSecretLen: csize_t;
                                    payload: ptr uint8_t; payloadLen: csize_t;
                                    plaintext: ptr uint8_t;
-                                   plaintextLen: ptr csize_t): cint
+                                   plaintextLen: ptr csize_t): cint {.importc, cdecl.}
 ## !
 ##  Calculates the maximum "aes128gcm" encrypted payload length. The caller
 ##  should allocate and pass an array of this length to the "aes128gcm"
@@ -192,7 +199,7 @@ proc ece_webpush_aes128gcm_decrypt*(rawRecvPrivKey: ptr uint8_t;
 ##
 
 proc ece_aes128gcm_payload_max_length*(rs: uint32_t; padLen: csize_t;
-                                      plaintextLen: csize_t): csize_t
+                                      plaintextLen: csize_t): csize_t {.importc, cdecl.}
 ## !
 ##  Encrypts a Web Push message using the "aes128gcm" scheme. This function
 ##  automatically generates an ephemeral ECDH key pair and a random salt.
@@ -228,7 +235,7 @@ proc ece_webpush_aes128gcm_encrypt*(rawRecvPubKey: ptr uint8_t;
                                    authSecret: ptr uint8_t; authSecretLen: csize_t;
                                    rs: uint32_t; padLen: csize_t;
                                    plaintext: ptr uint8_t; plaintextLen: csize_t;
-                                   payload: ptr uint8_t; payloadLen: ptr csize_t): cint
+                                   payload: ptr uint8_t; payloadLen: ptr csize_t): cint {.importc, cdecl.}
 ## !
 ##  Encrypts a Web Push message using the "aes128gcm" scheme, with an explicit
 ##  sender key and salt. The sender key can be reused, but the salt *must* be
@@ -276,7 +283,7 @@ proc ece_webpush_aes128gcm_encrypt_with_keys*(rawSenderPrivKey: ptr uint8_t;
     rawSenderPrivKeyLen: csize_t; authSecret: ptr uint8_t; authSecretLen: csize_t;
     salt: ptr uint8_t; saltLen: csize_t; rawRecvPubKey: ptr uint8_t;
     rawRecvPubKeyLen: csize_t; rs: uint32_t; padLen: csize_t; plaintext: ptr uint8_t;
-    plaintextLen: csize_t; payload: ptr uint8_t; payloadLen: ptr csize_t): cint
+    plaintextLen: csize_t; payload: ptr uint8_t; payloadLen: ptr csize_t): cint {.importc, cdecl.}
 ## !
 ##  Calculates the maximum "aesgcm" ciphertext length. The caller should allocate
 ##  and pass an array of this length to `ece_webpush_aesgcm_encrypt_with_keys`.
@@ -290,7 +297,7 @@ proc ece_webpush_aes128gcm_encrypt_with_keys*(rawSenderPrivKey: ptr uint8_t;
 ##
 
 proc ece_aesgcm_ciphertext_max_length*(rs: uint32_t; padLen: csize_t;
-                                      plaintextLen: csize_t): csize_t
+                                      plaintextLen: csize_t): csize_t {.importc, cdecl.}
 ## !
 ##  Encrypts a Web Push message using the "aesgcm" scheme. Like
 ##  `ece_webpush_aes128gcm_encrypt`, this function generates a sender key pair
@@ -336,7 +343,7 @@ proc ece_webpush_aesgcm_encrypt*(rawRecvPubKey: ptr uint8_t;
                                 salt: ptr uint8_t; saltLen: csize_t;
                                 rawSenderPubKey: ptr uint8_t;
                                 rawSenderPubKeyLen: csize_t;
-                                ciphertext: ptr uint8_t; ciphertextLen: ptr csize_t): cint
+                                ciphertext: ptr uint8_t; ciphertextLen: ptr csize_t): cint {.importc, cdecl.}
 ## !
 ##  Encrypts a Web Push message using the "aesgcm" scheme and explicit keys.
 ##
@@ -387,7 +394,7 @@ proc ece_webpush_aesgcm_encrypt_with_keys*(rawSenderPrivKey: ptr uint8_t;
     salt: ptr uint8_t; saltLen: csize_t; rawRecvPubKey: ptr uint8_t;
     rawRecvPubKeyLen: csize_t; rs: uint32_t; padLen: csize_t; plaintext: ptr uint8_t;
     plaintextLen: csize_t; rawSenderPubKey: ptr uint8_t; rawSenderPubKeyLen: csize_t;
-    ciphertext: ptr uint8_t; ciphertextLen: ptr csize_t): cint
+    ciphertext: ptr uint8_t; ciphertextLen: ptr csize_t): cint {.importc, cdecl.}
 ## !
 ##  Calculates the maximum "aesgcm" plaintext length. The caller should allocate
 ##  and pass an array of this length to `ece_webpush_aesgcm_decrypt`.
@@ -401,7 +408,7 @@ proc ece_webpush_aesgcm_encrypt_with_keys*(rawSenderPrivKey: ptr uint8_t;
 ##  \return                  The maximum plaintext length.
 ##
 
-proc ece_aesgcm_plaintext_max_length*(rs: uint32_t; ciphertextLen: csize_t): csize_t
+proc ece_aesgcm_plaintext_max_length*(rs: uint32_t; ciphertextLen: csize_t): csize_t {.importc, cdecl.}
 ## !
 ##  Decrypts a Web Push message encrypted using the "aesgcm" scheme.
 ##
@@ -443,7 +450,7 @@ proc ece_webpush_aesgcm_decrypt*(rawRecvPrivKey: ptr uint8_t;
                                 rawSenderPubKey: ptr uint8_t;
                                 rawSenderPubKeyLen: csize_t; rs: uint32_t;
                                 ciphertext: ptr uint8_t; ciphertextLen: csize_t;
-                                plaintext: ptr uint8_t; plaintextLen: ptr csize_t): cint
+                                plaintext: ptr uint8_t; plaintextLen: ptr csize_t): cint {.importc, cdecl.}
 ## !
 ##  Extracts "aes128gcm" decryption parameters from an encrypted payload.
 ##  `salt`, `keyId`, and `ciphertext` are pointers into `payload`, and must not
@@ -468,7 +475,7 @@ proc ece_webpush_aesgcm_decrypt*(rawRecvPrivKey: ptr uint8_t;
 proc ece_aes128gcm_payload_extract_params*(payload: ptr uint8_t;
     payloadLen: csize_t; salt: ptr ptr uint8_t; saltLen: ptr csize_t;
     keyId: ptr ptr uint8_t; keyIdLen: ptr csize_t; rs: ptr uint32_t;
-    ciphertext: ptr ptr uint8_t; ciphertextLen: ptr csize_t): cint
+    ciphertext: ptr ptr uint8_t; ciphertextLen: ptr csize_t): cint {.importc, cdecl.}
 ## !
 ##  Extracts "aesgcm" decryption parameters from the `Crypto-Key` and
 ##  `Encryption` headers.
@@ -495,7 +502,7 @@ proc ece_aes128gcm_payload_extract_params*(payload: ptr uint8_t;
 
 proc ece_webpush_aesgcm_headers_extract_params*(cryptoKeyHeader: cstring;
     encryptionHeader: cstring; salt: ptr uint8_t; saltLen: csize_t;
-    rawSenderPubKey: ptr uint8_t; rawSenderPubKeyLen: csize_t; rs: ptr uint32_t): cint
+    rawSenderPubKey: ptr uint8_t; rawSenderPubKeyLen: csize_t; rs: ptr uint32_t): cint {.importc, cdecl.}
 ## !
 ##  Builds the `Crypto-Key` and `Encryption` headers from the "aesgcm"
 ##  encryption parameters.
@@ -546,7 +553,7 @@ proc ece_webpush_aesgcm_headers_extract_params*(cryptoKeyHeader: cstring;
 proc ece_webpush_aesgcm_headers_from_params*(salt: pointer; saltLen: csize_t;
     rawSenderPubKey: pointer; rawSenderPubKeyLen: csize_t; rs: uint32_t;
     cryptoKeyHeader: cstring; cryptoKeyHeaderLen: ptr csize_t;
-    encryptionHeader: cstring; encryptionHeaderLen: ptr csize_t): cint
+    encryptionHeader: cstring; encryptionHeaderLen: ptr csize_t): cint {.importc, cdecl.}
 ## !
 ##  Converts a byte array to a Base64url-encoded (RFC 4648) string.
 ##
@@ -570,7 +577,7 @@ proc ece_webpush_aesgcm_headers_from_params*(salt: pointer; saltLen: csize_t;
 
 proc ece_base64url_encode*(binary: pointer; binaryLen: csize_t;
                           paddingPolicy: ece_base64url_encode_policy_t;
-                          base64: cstring; base64Len: csize_t): csize_t
+                          base64: cstring; base64Len: csize_t): csize_t {.importc, cdecl.}
 ## !
 ##  Decodes a Base64url-encoded (RFC 4648) string.
 ##
@@ -592,4 +599,9 @@ proc ece_base64url_encode*(binary: pointer; binaryLen: csize_t;
 
 proc ece_base64url_decode*(base64: cstring; base64Len: csize_t;
                           paddingPolicy: ece_base64url_decode_policy_t;
-                          binary: ptr uint8_t; binaryLen: csize_t): csize_t
+                          binary: ptr uint8_t; binaryLen: csize_t): csize_t {.importc, cdecl.}
+
+
+import os
+const libecePath = currentSourcePath.parentDir() / "./lib"
+{.passL: libecePath / "libece.a".}

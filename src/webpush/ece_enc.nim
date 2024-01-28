@@ -37,4 +37,4 @@ echo payload
 
 const filename = "aes128gcm.bin"
 writeFile(filename, payload)
-echo "curl -v -X POST -H \"Content-Encoding: aes128gcm\" --data-binary ", filename, " ", endpoint
+echo "curl -v -X POST -H \"Content-Encoding: aes128gcm\" --data-binary @", filename, " ", endpoint

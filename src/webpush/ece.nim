@@ -605,3 +605,7 @@ proc ece_base64url_decode*(base64: cstring; base64Len: csize_t;
 import os
 const libecePath = currentSourcePath.parentDir() / "./lib"
 {.passL: libecePath / "libece.a".}
+
+const opensslPath = currentSourcePath.parentDir() / "./lib"
+{.passL: opensslPath / "libssl.a".}
+{.passL: opensslPath / "libcrypto.a".}

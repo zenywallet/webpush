@@ -602,7 +602,7 @@ proc ece_base64url_decode*(base64: cstring; base64Len: csize_t;
                           binary: ptr uint8_t; binaryLen: csize_t): csize_t {.importc, cdecl.}
 
 
-import os
+import std/os
 const libecePath = currentSourcePath.parentDir() / "./lib"
 {.passL: libecePath / "libece.a".}
 

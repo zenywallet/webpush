@@ -30,7 +30,7 @@ var err = ece_webpush_aes128gcm_encrypt(addr rawRecvPubKey[0], rawRecvPubKeyLen,
                                         addr authSecret[0], authSecretLen,
                                         ECE_WEBPUSH_DEFAULT_RS, padLen,
                                         cast[ptr byte](plaintext.cstring), plaintext.len.csize_t,
-                                        addr payload[0], addr payloadLen);
+                                        addr payload[0], addr payloadLen)
 assert err == ECE_OK
 payload.setLen(payloadLen)
 echo payload

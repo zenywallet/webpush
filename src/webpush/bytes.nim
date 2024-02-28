@@ -287,9 +287,9 @@ proc `$`*(o: ref tuple | ref object | ptr tuple | ptr object): string = $o[]
 
 proc `==`*(x, y: Hash | Hash160): bool = x.toBytes == y.toBytes
 
-proc `$`*(data: array[4, byte]): string = data.toBytes.toHex
-proc `$`*(data: array[8, byte]): string = data.toBytes.toHex
-proc `$`*(data: array[16, byte]): string = data.toBytes.toHex
-proc `$`*(data: array[20, byte]): string = data.toBytes.toHex
-proc `$`*(data: array[32, byte]): string = data.toBytes.toHex
-proc `$`*(data: array[64, byte]): string = data.toBytes.toHex
+proc `$`*(data: array[4, byte]): string = data.toHex
+proc `$`*(data: array[8, byte]): string = data.toHex
+proc `$`*(data: array[16, byte]): string = data.toHex
+proc `$`*(data: array[20, byte]): string = data.toHex
+proc `$`*(data: array[32, byte]): string = data.toHex
+proc `$`*(data: array[64, byte]): string = data.toHex

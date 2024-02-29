@@ -293,3 +293,4 @@ proc `$`*(data: array[16, byte]): string = data.toHex
 proc `$`*(data: array[20, byte]): string = data.toHex
 proc `$`*(data: array[32, byte]): string = data.toHex
 proc `$`*(data: array[64, byte]): string = data.toHex
+proc `$`*(data: array[65, byte]): string = data.toHex

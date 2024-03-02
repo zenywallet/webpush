@@ -1,6 +1,7 @@
 # Copyright (c) 2020 zenywallet
 
 import sequtils, strutils, endians, algorithm
+import std/macros
 
 type
   VarInt* = distinct int
@@ -287,10 +288,11 @@ proc `$`*(o: ref tuple | ref object | ptr tuple | ptr object): string = $o[]
 
 proc `==`*(x, y: Hash | Hash160): bool = x.toBytes == y.toBytes
 
-proc `$`*(data: array[4, byte]): string = data.toHex
-proc `$`*(data: array[8, byte]): string = data.toHex
-proc `$`*(data: array[16, byte]): string = data.toHex
-proc `$`*(data: array[20, byte]): string = data.toHex
-proc `$`*(data: array[32, byte]): string = data.toHex
-proc `$`*(data: array[64, byte]): string = data.toHex
-proc `$`*(data: array[65, byte]): string = data.toHex
+macro arrayToStringMacro(): untyped =
+  result = newStmtList()
+  var dollarIdent = newIdentNode("$")
+  for i in 1..256:
+    result.add quote do:
+      proc `dollarIdent`*(data: array[`i`, byte]): string = data.toHex
+
+arrayToStringMacro()

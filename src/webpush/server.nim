@@ -5,7 +5,6 @@ import std/strutils
 import std/strformat
 import caprese
 import capresepkg/exec
-import bytes
 
 const keyResult = staticExecCode:
   import std/marshal

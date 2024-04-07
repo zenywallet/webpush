@@ -15,7 +15,7 @@ type
     readyFlag: bool
     reconnectCount: int
 
-proc connect0*(stream: var Stream; url, protocols: cstring; onOpen: proc();
+proc connect0*(stream: var Stream; url: cstring; protocols: JsObject; onOpen: proc();
               onReady: proc(); onRecv: proc(data: Uint8Array); onClose: proc()) =
   stream.ws = newWebSocket(url, protocols)
   stream.ws.binaryType = "arraybuffer".cstring
@@ -52,7 +52,7 @@ proc connect0*(stream: var Stream; url, protocols: cstring; onOpen: proc();
     console.log(uint8ArrayToStr(data))
     onRecv(data)
 
-macro connect*(stream: var Stream; url, protocols: cstring, body: untyped): untyped =
+macro connect*(stream: var Stream; url, protocols: string | cstring | JsObject, body: untyped): untyped =
   var onOpen = newStmtList()
   var onReady = newStmtList()
   var onRecv = newStmtList()
@@ -68,7 +68,7 @@ macro connect*(stream: var Stream; url, protocols: cstring, body: untyped): unty
       onClose.add(b[1])
   var data = ident"data"
   quote do:
-    `stream`.connect0(`url`, `protocols`, proc() = `onOpen`, proc() = `onReady`,
+    `stream`.connect0(`url`, `protocols`.toJs, proc() = `onOpen`, proc() = `onReady`,
                       proc(`data`: Uint8Array) = `onRecv`, proc() = `onClose`)
 
 proc close*(stream: var Stream) =

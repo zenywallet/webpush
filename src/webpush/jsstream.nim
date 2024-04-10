@@ -52,7 +52,7 @@ proc connect0*(stream: var Stream; url: cstring; protocols: JsObject; onOpen: pr
     console.log(uint8ArrayToStr(data))
     onRecv(data)
 
-macro connect*(stream: var Stream; url, protocols: string | cstring | JsObject, body: untyped): untyped =
+macro connect*(stream: var Stream; url: cstring; protocols: cstring | JsObject; body: untyped): untyped =
   var onOpen = newStmtList()
   var onReady = newStmtList()
   var onRecv = newStmtList()

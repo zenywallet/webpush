@@ -3,11 +3,12 @@
 import std/base64
 import std/json
 import std/strutils
+import std/times
 import nimcrypto
 import bytes
 
 var jwsHeaderJson = %*{"typ":"JWT","alg":"ES256"}
-var jwsPayloadJson = %*{"aud":"https://push.services.mozilla.com","sub":"mailto:admin@example.com","exp":1463001340}
+var jwsPayloadJson = %*{"aud":"https://push.services.mozilla.com","sub":"mailto:admin@example.com","exp":int(epochTime() + 86400)}
 echo jwsHeaderJson
 echo jwsPayloadJson
 

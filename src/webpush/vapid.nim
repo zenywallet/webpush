@@ -7,7 +7,7 @@ import nimcrypto
 import bytes
 
 var jwsHeaderJson = %*{"typ":"JWT","alg":"ES256"}
-var jwsPayloadJson = %*{"aud":"https://push.services.mozilla.com","sub":"mailto:admin@example.com","exp":"1463001340"}
+var jwsPayloadJson = %*{"aud":"https://push.services.mozilla.com","sub":"mailto:admin@example.com","exp":1463001340}
 echo jwsHeaderJson
 echo jwsPayloadJson
 

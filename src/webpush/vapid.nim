@@ -115,7 +115,7 @@ echo "rawPubKey=", rawPubKey
 
 import webpush
 
-const vapidKeyFile = "vapidKey.pem"
+const vapidKeyFile = currentSourcePath().parentDir() / "vapidKey.pem"
 var pair = loadKey(vapidKeyFile)
 if not pair.isValid():
   pair = genKey()

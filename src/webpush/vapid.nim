@@ -21,7 +21,7 @@ macro jwsHeaderEncLit(): untyped =
 
 const jwsHeaderEnc = jwsHeaderEncLit()
 
-proc getVapidAuthorization(audience, subject, pubKeyEnc: string, sk: ptr br_ec_private_key, exp: int = int(epochTime() + 86400)): string =
+proc getVapidAuthorization(audience, subject, pubKeyEnc: string, sk: br_ec_private_key, exp: int = int(epochTime() + 86400)): string =
   var jwsPayloadJson = %*{"aud": audience, "sub": subject, "exp": exp}
   var jwsPayloadEnc = base64.encode($jwsPayloadJson, true)
   jwsPayloadEnc.removeSuffix('=')
@@ -32,7 +32,7 @@ proc getVapidAuthorization(audience, subject, pubKeyEnc: string, sk: ptr br_ec_p
   br_sha256_update(addr sha256ctx, cast[pointer](addr jwsSigningInput[0]), jwsSigningInput.len.csize_t)
   br_sha256_out(addr sha256ctx, addr hash)
   var sig: array[64, byte]
-  var sigLen = br_ecdsa_i15_sign_raw(addr br_ec_prime_i15, addr br_sha256_vtable, addr hash, sk, addr sig)
+  var sigLen = br_ecdsa_i15_sign_raw(addr br_ec_prime_i15, addr br_sha256_vtable, addr hash, addr sk, addr sig)
   if sigLen != 64: raise
   var sigEnc = base64.encode(sig, true)
   sigEnc.removeSuffix('=')

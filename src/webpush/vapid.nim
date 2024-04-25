@@ -21,7 +21,7 @@ macro jwsHeaderEncLit(): untyped =
 
 const jwsHeaderEnc = jwsHeaderEncLit()
 
-proc getVapidAuthorization(audience, subject, pubKeyEnc: string, sk: br_ec_private_key, exp: int = int(epochTime() + 86400)): string =
+proc getVapidAuthorization*(audience, subject, pubKeyEnc: string, sk: br_ec_private_key, exp: int = int(epochTime() + 86400)): string =
   var jwsPayloadJson = %*{"aud": audience, "sub": subject, "exp": exp}
   var jwsPayloadEnc = base64.encode($jwsPayloadJson, true)
   jwsPayloadEnc.removeSuffix('=')

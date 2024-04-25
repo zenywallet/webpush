@@ -23,7 +23,7 @@ const jwsHeaderEnc = jwsHeaderEncLit()
 
 type VapidPrvKey* = br_ec_private_key
 
-proc vapidPrvKey*(prv: openArray[byte]): VapidPrvKey =
+proc getVapidPrvKey*(prv: openArray[byte]): VapidPrvKey =
   br_ec_private_key(curve: BR_EC_secp256r1, x: addr prv[0], xlen: prv.len.csize_t)
 
 proc getVapidAuthorization*(audience, subject, pubKeyEnc: string, prv: VapidPrvKey, exp: int = int(epochTime() + 86400)): string =

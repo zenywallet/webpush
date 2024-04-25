@@ -4,8 +4,41 @@ import std/base64
 import std/json
 import std/strutils
 import std/times
+import std/macros
+import bearssl/bearssl_ssl
+import bearssl/bearssl_rsa
+import bearssl/bearssl_ec
+import bearssl/bearssl_rand
+import bearssl/bearssl_hash
+import bearssl/bearssl_x509
+import bearssl/bearssl_pem
 import nimcrypto
 import bytes
+
+macro jwsHeaderEncLit(): untyped =
+  var jwsHeader = """{"typ":"JWT","alg":"ES256"}"""
+  var jwsHeaderEnc = base64.encode(jwsHeader, true)
+  jwsHeaderEnc.removeSuffix('=')
+  newLit(jwsHeaderEnc)
+
+const jwsHeaderEnc = jwsHeaderEncLit()
+
+proc getVapidAuthorization(audience, subject, pubKeyEnc: string, sk: ptr br_ec_private_key, exp: int = int(epochTime() + 86400)): string =
+  var jwsPayloadJson = %*{"aud": audience, "sub": subject, "exp": exp}
+  var jwsPayloadEnc = base64.encode($jwsPayloadJson, true)
+  jwsPayloadEnc.removeSuffix('=')
+  var jwsSigningInput = jwsHeaderEnc & "." & jwsPayloadEnc
+  var hash: array[32, byte]
+  var sha256ctx: br_sha256_context
+  br_sha256_init(addr sha256ctx)
+  br_sha256_update(addr sha256ctx, cast[pointer](addr jwsSigningInput[0]), jwsSigningInput.len.csize_t)
+  br_sha256_out(addr sha256ctx, addr hash)
+  var sig: array[64, byte]
+  var sigLen = br_ecdsa_i15_sign_raw(addr br_ec_prime_i15, addr br_sha256_vtable, addr hash, sk, addr sig)
+  if sigLen != 64: raise
+  var sigEnc = base64.encode(sig, true)
+  sigEnc.removeSuffix('=')
+  result = "vapid t=" & jwsSigningInput & "." & sigEnc & ", k=" & pubKeyEnc
 
 var jwsHeaderJson = %*{"typ":"JWT","alg":"ES256"}
 var jwsPayloadJson = %*{"aud":"https://push.services.mozilla.com","sub":"mailto:admin@example.com","exp":int(epochTime() + 86400)}
@@ -140,14 +173,6 @@ if EC_POINT_point2oct(EC_KEY_get0_group(key4), EC_KEY_get0_public_key(key4),
   raise
 echo "rawPubKey2=", rawPubKey2
 ]#
-
-import bearssl/bearssl_ssl
-import bearssl/bearssl_rsa
-import bearssl/bearssl_ec
-import bearssl/bearssl_rand
-import bearssl/bearssl_hash
-import bearssl/bearssl_x509
-import bearssl/bearssl_pem
 
 var impl: ptr br_ec_impl = br_ec_get_default()
 var sk: br_ec_private_key = br_ec_private_key(curve: BR_EC_secp256r1, x: addr rawPrivKey[0], xlen: rawPrivKey.len.csize_t)

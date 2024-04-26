@@ -24,13 +24,16 @@ const WebPushJsTmpl = staticScript:
   import std/jsffi
   import std/macros
   import std/asyncjs
+  import std/strformat
   import karax/[karax, karaxdsl, vdom]
   import jslib
+  import jsstream
 
   var pubHex = "<<ServerPubHex>>".cstring
   var appInst: KaraxInstance
   var notificationState = "".cstring
   var prevNotificationState = "".cstring
+  var stream: Stream
 
   proc jq(selector: cstring): JsObject {.importcpp: "$$(#)".}
   converter futureConv(jsObj: JsObject): Future[JsObject] = cast[Future[JsObject]](jsObj)
@@ -62,6 +65,10 @@ const WebPushJsTmpl = staticScript:
     var dottag = (if tag.len > 0: "." & tag else: "")
     jq((".ui.message" & dottag).cstring).toast("close")
 
+  template fmtj(pattern: static string): untyped = fmt(pattern, '<', '>')
+
+  proc cmdSend(cmd: string) = stream.send(strToUint8Array(cmd.cstring))
+
   proc hookChangeEvent() {.async, discardable.} =
     var permissionStatus = await navigator.permissions.query(JsObject{name: "notifications".cstring})
     permissionStatus.onchange = proc(evt: JsObject) =
@@ -85,6 +92,12 @@ const WebPushJsTmpl = staticScript:
         Notify.Error.show("webpush denied")
         return
       elif permission == "granted".toJs:
+        var swr = await navigator.serviceWorker.ready
+        var subscription = await swr.pushManager.getSubscription()
+        var pushSubscription = $(JSON.stringify(subscription).to(cstring))
+        echo pushSubscription
+        cmdSend fmtj"""{"cmd":"pushSubscription","data":<pushSubscription>}"""
+
         Notify.Info.show("webpush permitted")
         return
     else:
@@ -96,7 +109,10 @@ const WebPushJsTmpl = staticScript:
         userVisibleOnly: true,
         applicationServerKey: hexToUint8Array(pubHex)
       })
-      console.log(JSON.stringify(subscription))
+      var pushSubscription = $(JSON.stringify(subscription).to(cstring))
+      echo pushSubscription
+      cmdSend fmtj"""{"cmd":"pushSubscription","data":<pushSubscription>}"""
+
     except DOMException as e:
       console.log(e)
       let permissionStr = window.Notification.permission.to(cstring)
@@ -127,6 +143,10 @@ const WebPushJsTmpl = staticScript:
       document.addEventListener("DOMContentLoaded", proc(evt: JsObject) = body)
     else:
       body
+
+  stream.connect(url = "wss://localhost:58009/ws", protocol = "webpush"):
+    onOpen:
+      echo "onOpen"
 
   runAsync:
     if "serviceWorker".toJs.in(navigator).to(bool):
@@ -272,6 +292,17 @@ server(ssl = true, ip = "0.0.0.0", port = 58009):
     get "/sw.js": return ServiceWorkerJs.addHeader("js").send
     get "/webpush.js": return WebPushJs.addHeader("js").send
     get "/site.webmanifest": return SiteManifest.addHeader("json").send
+
+    stream "/ws":
+      onOpen:
+        echo "onOpen"
+
+      onMessage:
+        echo "data=", data.toString(size)
+
+      onClose:
+        echo "onClose"
+
     return "Not found".addHeader(Status404).send
 
 serverStart()

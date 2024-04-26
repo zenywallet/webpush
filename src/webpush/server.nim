@@ -195,7 +195,7 @@ var fomantic = {
 """)
 
 const ServiceWorkerJsTmpl = staticScript:
-  import jsffi
+  import std/jsffi
 
   type
     SelfObj = JsObject

@@ -3,8 +3,10 @@
 import std/marshal
 import std/strutils
 import std/strformat
+import std/json
 import caprese
 import capresepkg/exec
+import ece
 
 const keyResult = staticExecCode:
   import std/marshal
@@ -299,6 +301,42 @@ server(ssl = true, ip = "0.0.0.0", port = 58009):
 
       onMessage:
         echo "data=", data.toString(size)
+        var cmdData = parseJson(data.toString(size))
+        var pushSubscription = cmdData["data"]
+        echo "json=", $pushSubscription
+        var endpoint = pushSubscription["endpoint"].getStr()
+        echo "endpoint=", endpoint
+        var auth = pushSubscription["keys"]["auth"].getStr()
+        var p256dh = pushSubscription["keys"]["p256dh"].getStr()
+        echo "auth=", auth
+        echo "p256dh=", p256dh
+        var plaintext = "I'm just like my country, I'm young, scrappy, and " &
+                        "hungry, and I'm not throwing away my shot."
+
+        var rawRecvPubKey: array[ECE_WEBPUSH_PUBLIC_KEY_LENGTH, byte]
+        var rawRecvPubKeyLen = ece_base64url_decode((addr p256dh[0]).cstring, p256dh.len.csize_t, ECE_BASE64URL_REJECT_PADDING,
+                                                    addr rawRecvPubKey[0], ECE_WEBPUSH_PUBLIC_KEY_LENGTH)
+        doAssert rawRecvPubKeyLen > 0
+
+        var authSecret: array[ECE_WEBPUSH_AUTH_SECRET_LENGTH, byte]
+        var authSecretLen = ece_base64url_decode((addr auth[0]).cstring, auth.len.csize_t, ECE_BASE64URL_REJECT_PADDING,
+                                                addr authSecret[0], ECE_WEBPUSH_AUTH_SECRET_LENGTH)
+        doAssert authSecretLen > 0
+
+        var padLen: csize_t = 0
+        var payloadLen = ece_aes128gcm_payload_max_length(ECE_WEBPUSH_DEFAULT_RS,
+                                                          padLen, plaintext.len.csize_t)
+        doAssert payloadLen > 0
+
+        var payload = newSeq[byte](payloadLen)
+        var err = ece_webpush_aes128gcm_encrypt(addr rawRecvPubKey[0], rawRecvPubKeyLen,
+                                                addr authSecret[0], authSecretLen,
+                                                ECE_WEBPUSH_DEFAULT_RS, padLen,
+                                                cast[ptr byte](plaintext.cstring), plaintext.len.csize_t,
+                                                addr payload[0], addr payloadLen)
+        doAssert err == ECE_OK
+        payload.setLen(payloadLen)
+        echo "payload=", payload
 
       onClose:
         echo "onClose"

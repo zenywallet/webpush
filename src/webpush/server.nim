@@ -338,6 +338,8 @@ server(ssl = true, ip = "0.0.0.0", port = 58009):
         payload.setLen(payloadLen)
         echo "payload=", payload
 
+        return SendResult.Pending
+
       onClose:
         echo "onClose"
 

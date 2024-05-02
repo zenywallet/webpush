@@ -4,6 +4,7 @@ import std/marshal
 import std/strutils
 import std/strformat
 import std/json
+import std/base64
 import caprese
 import capresepkg/exec
 import ece
@@ -21,6 +22,14 @@ const keyResult = staticExecCode:
 
 const (serverPrv, serverPub) = to[tuple[prv, pub: seq[byte]]](keyResult)
 const ServerPubHex = serverPub.toHex
+
+macro staticEncode(data: static openArray[byte]): untyped =
+  var enc = base64.encode(data, true)
+  enc.removeSuffix('=')
+  newLit(enc)
+
+const ServerPubEnc = staticEncode(serverPub)
+echo "ServerPubEnc=", ServerPubEnc
 
 const WebPushJsTmpl = staticScript:
   import std/jsffi
@@ -312,6 +321,7 @@ server(ssl = true, ip = "0.0.0.0", port = 58009):
         echo "p256dh=", p256dh
         var plaintext = "I'm just like my country, I'm young, scrappy, and " &
                         "hungry, and I'm not throwing away my shot."
+
 
         var rawRecvPubKey: array[ECE_WEBPUSH_PUBLIC_KEY_LENGTH, byte]
         var rawRecvPubKeyLen = ece_base64url_decode((addr p256dh[0]).cstring, p256dh.len.csize_t, ECE_BASE64URL_REJECT_PADDING,

@@ -5,6 +5,7 @@ import std/strutils
 import std/strformat
 import std/json
 import std/base64
+import std/uri
 import caprese
 import capresepkg/exec
 import ece
@@ -347,6 +348,10 @@ server(ssl = true, ip = "0.0.0.0", port = 58009):
         doAssert err == ECE_OK
         payload.setLen(payloadLen)
         echo "payload=", payload
+
+        var url = parseUri(endpoint)
+        var audience = url.scheme & "://" & url.hostname
+        echo "audience=", audience
 
         return SendResult.Pending
 

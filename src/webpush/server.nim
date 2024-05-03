@@ -6,9 +6,11 @@ import std/strformat
 import std/json
 import std/base64
 import std/uri
+import libcurl
 import caprese
 import capresepkg/exec
 import ece
+import vapid
 
 const keyResult = staticExecCode:
   import std/marshal
@@ -31,6 +33,10 @@ macro staticEncode(data: static openArray[byte]): untyped =
 
 const ServerPubEnc = staticEncode(serverPub)
 echo "ServerPubEnc=", ServerPubEnc
+
+var vapidPrvKey: VapidPrvKey = getVapidPrvKey(serverPrv)
+
+const VapidSubject = "https://localhost" # "mailto:<mail address>"
 
 const WebPushJsTmpl = staticScript:
   import std/jsffi
@@ -352,6 +358,34 @@ server(ssl = true, ip = "0.0.0.0", port = 58009):
         var url = parseUri(endpoint)
         var audience = url.scheme & "://" & url.hostname
         echo "audience=", audience
+
+        var headers: PSlist
+        headers = slist_append(headers, "Content-Type: application/octet-stream")
+        headers = slist_append(headers, "Content-Encoding: aes128gcm")
+        headers = slist_append(headers, "TTL: 2419200")
+        headers = slist_append(headers, "Authorization: " &
+                    getVapidAuthorization(audience, VapidSubject, ServerPubEnc, vapidPrvKey))
+
+        var outbuf: ref string = new string
+        let curl: Pcurl = easy_init()
+        discard curl.easy_setopt(OPT_VERBOSE, 1)
+        discard curl.easy_setopt(OPT_URL, endpoint.cstring)
+        discard curl.easy_setopt(OPT_POST, 1)
+        discard curl.easy_setopt(OPT_POSTFIELDS, addr payload[0])
+        discard curl.easy_setopt(OPT_POSTFIELDSIZE, payload.len)
+        discard curl.easy_setopt(OPT_WRITEDATA, outbuf)
+
+        proc writeCallback(buffer: cstring, size: int, nitems: int, outstream: pointer): int =
+          var outbuf = cast[ref string](outstream)
+          outbuf[] &= buffer
+          echo "outbuf len=", outbuf[].len
+          result = size * nitems
+
+        discard curl.easy_setopt(OPT_WRITEFUNCTION, writeCallback)
+        discard curl.easy_setopt(OPT_HTTPHEADER, headers)
+        let ret = curl.easy_perform()
+        curl.easy_cleanup()
+        echo ret, outbuf[]
 
         return SendResult.Pending
 

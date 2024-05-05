@@ -303,6 +303,38 @@ const IndexHtml = staticHtmlDocument:
     body:
       tdiv(id="main")
 
+const ICON_512_FILENAME = "icon-512x512.png"
+const ICON_128_FILENAME = "icon-128x128.png"
+
+when not fileExists(currentSourcePath.parentDir() / ICON_512_FILENAME):
+  staticExecCode:
+    import pixie
+    const ICON_512_FILENAME = "icon-512x512.png"
+    let image = newImage(512, 512)
+    let ctx = newContext(image)
+    ctx.fillStyle = rgba(0, 0, 225, 255)
+    let pos = vec2(32, 32)
+    let wh = vec2(448, 448)
+    ctx.fillRect(rect(pos, wh))
+    echo image.encodeImage(PngFormat)
+    image.writeFile(ICON_512_FILENAME)
+
+when not fileExists(currentSourcePath.parentDir() / ICON_128_FILENAME):
+  staticExecCode:
+    import pixie
+    const ICON_128_FILENAME = "icon-128x128.png"
+    let image = newImage(128, 128)
+    let ctx = newContext(image)
+    ctx.fillStyle = rgba(0, 0, 225, 255)
+    let pos = vec2(8, 8)
+    let wh = vec2(112, 112)
+    ctx.fillRect(rect(pos, wh))
+    echo image.encodeImage(PngFormat)
+    image.writeFile(ICON_128_FILENAME)
+
+const ICON_512 = staticRead(ICON_512_FILENAME)
+const ICON_128 = staticRead(ICON_128_FILENAME)
+
 server(ssl = true, ip = "0.0.0.0", port = 58009):
   routes:
     echo reqUrl()
@@ -310,6 +342,8 @@ server(ssl = true, ip = "0.0.0.0", port = 58009):
     get "/sw.js": return ServiceWorkerJs.addHeader("js").send
     get "/webpush.js": return WebPushJs.addHeader("js").send
     get "/site.webmanifest": return SiteManifest.addHeader("json").send
+    get "/icon-512x512.png": return ICON_512.addHeader("png").send
+    get "/icon-128x128.png": return ICON_128.addHeader("png").send
 
     stream "/ws":
       onOpen:

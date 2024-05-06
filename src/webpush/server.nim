@@ -335,6 +335,85 @@ when not fileExists(currentSourcePath.parentDir() / ICON_128_FILENAME):
 const ICON_512 = staticRead(ICON_512_FILENAME)
 const ICON_128 = staticRead(ICON_128_FILENAME)
 
+type
+  PendingData = object
+    msg: string
+
+var reqs: Pendings[PendingData]
+reqs.newPending(limit = 100)
+
+worker(num = 2):
+  reqs.recvLoop(req):
+    var cmdData = parseJson(req.data.msg)
+    var pushSubscription = cmdData["data"]
+    echo "json=", $pushSubscription
+    var endpoint = pushSubscription["endpoint"].getStr()
+    echo "endpoint=", endpoint
+    var auth = pushSubscription["keys"]["auth"].getStr()
+    var p256dh = pushSubscription["keys"]["p256dh"].getStr()
+    echo "auth=", auth
+    echo "p256dh=", p256dh
+    var plaintext = "I'm just like my country, I'm young, scrappy, and " &
+                    "hungry, and I'm not throwing away my shot."
+
+
+    var rawRecvPubKey: array[ECE_WEBPUSH_PUBLIC_KEY_LENGTH, byte]
+    var rawRecvPubKeyLen = ece_base64url_decode((addr p256dh[0]).cstring, p256dh.len.csize_t, ECE_BASE64URL_REJECT_PADDING,
+                                                addr rawRecvPubKey[0], ECE_WEBPUSH_PUBLIC_KEY_LENGTH)
+    doAssert rawRecvPubKeyLen > 0
+
+    var authSecret: array[ECE_WEBPUSH_AUTH_SECRET_LENGTH, byte]
+    var authSecretLen = ece_base64url_decode((addr auth[0]).cstring, auth.len.csize_t, ECE_BASE64URL_REJECT_PADDING,
+                                            addr authSecret[0], ECE_WEBPUSH_AUTH_SECRET_LENGTH)
+    doAssert authSecretLen > 0
+
+    var padLen: csize_t = 0
+    var payloadLen = ece_aes128gcm_payload_max_length(ECE_WEBPUSH_DEFAULT_RS,
+                                                      padLen, plaintext.len.csize_t)
+    doAssert payloadLen > 0
+
+    var payload = newSeq[byte](payloadLen)
+    var err = ece_webpush_aes128gcm_encrypt(addr rawRecvPubKey[0], rawRecvPubKeyLen,
+                                            addr authSecret[0], authSecretLen,
+                                            ECE_WEBPUSH_DEFAULT_RS, padLen,
+                                            cast[ptr byte](plaintext.cstring), plaintext.len.csize_t,
+                                            addr payload[0], addr payloadLen)
+    doAssert err == ECE_OK
+    payload.setLen(payloadLen)
+    echo "payload=", payload
+
+    var url = parseUri(endpoint)
+    var audience = url.scheme & "://" & url.hostname
+    echo "audience=", audience
+
+    var headers: PSlist
+    headers = slist_append(headers, "Content-Type: application/octet-stream")
+    headers = slist_append(headers, "Content-Encoding: aes128gcm")
+    headers = slist_append(headers, "TTL: 2419200")
+    headers = slist_append(headers, "Authorization: " &
+                getVapidAuthorization(audience, VapidSubject, ServerPubEnc, vapidPrvKey))
+
+    var outbuf: ref string = new string
+    let curl: Pcurl = easy_init()
+    discard curl.easy_setopt(OPT_VERBOSE, 1)
+    discard curl.easy_setopt(OPT_URL, endpoint.cstring)
+    discard curl.easy_setopt(OPT_POST, 1)
+    discard curl.easy_setopt(OPT_POSTFIELDS, addr payload[0])
+    discard curl.easy_setopt(OPT_POSTFIELDSIZE, payload.len)
+    discard curl.easy_setopt(OPT_WRITEDATA, outbuf)
+
+    proc writeCallback(buffer: cstring, size: int, nitems: int, outstream: pointer): int =
+      var outbuf = cast[ref string](outstream)
+      outbuf[] &= buffer
+      echo "outbuf len=", outbuf[].len
+      result = size * nitems
+
+    discard curl.easy_setopt(OPT_WRITEFUNCTION, writeCallback)
+    discard curl.easy_setopt(OPT_HTTPHEADER, headers)
+    let ret = curl.easy_perform()
+    curl.easy_cleanup()
+    echo ret, outbuf[]
+
 server(ssl = true, ip = "0.0.0.0", port = 58009):
   routes:
     echo reqUrl()
@@ -351,77 +430,7 @@ server(ssl = true, ip = "0.0.0.0", port = 58009):
 
       onMessage:
         echo "data=", data.toString(size)
-        var cmdData = parseJson(data.toString(size))
-        var pushSubscription = cmdData["data"]
-        echo "json=", $pushSubscription
-        var endpoint = pushSubscription["endpoint"].getStr()
-        echo "endpoint=", endpoint
-        var auth = pushSubscription["keys"]["auth"].getStr()
-        var p256dh = pushSubscription["keys"]["p256dh"].getStr()
-        echo "auth=", auth
-        echo "p256dh=", p256dh
-        var plaintext = "I'm just like my country, I'm young, scrappy, and " &
-                        "hungry, and I'm not throwing away my shot."
-
-
-        var rawRecvPubKey: array[ECE_WEBPUSH_PUBLIC_KEY_LENGTH, byte]
-        var rawRecvPubKeyLen = ece_base64url_decode((addr p256dh[0]).cstring, p256dh.len.csize_t, ECE_BASE64URL_REJECT_PADDING,
-                                                    addr rawRecvPubKey[0], ECE_WEBPUSH_PUBLIC_KEY_LENGTH)
-        doAssert rawRecvPubKeyLen > 0
-
-        var authSecret: array[ECE_WEBPUSH_AUTH_SECRET_LENGTH, byte]
-        var authSecretLen = ece_base64url_decode((addr auth[0]).cstring, auth.len.csize_t, ECE_BASE64URL_REJECT_PADDING,
-                                                addr authSecret[0], ECE_WEBPUSH_AUTH_SECRET_LENGTH)
-        doAssert authSecretLen > 0
-
-        var padLen: csize_t = 0
-        var payloadLen = ece_aes128gcm_payload_max_length(ECE_WEBPUSH_DEFAULT_RS,
-                                                          padLen, plaintext.len.csize_t)
-        doAssert payloadLen > 0
-
-        var payload = newSeq[byte](payloadLen)
-        var err = ece_webpush_aes128gcm_encrypt(addr rawRecvPubKey[0], rawRecvPubKeyLen,
-                                                addr authSecret[0], authSecretLen,
-                                                ECE_WEBPUSH_DEFAULT_RS, padLen,
-                                                cast[ptr byte](plaintext.cstring), plaintext.len.csize_t,
-                                                addr payload[0], addr payloadLen)
-        doAssert err == ECE_OK
-        payload.setLen(payloadLen)
-        echo "payload=", payload
-
-        var url = parseUri(endpoint)
-        var audience = url.scheme & "://" & url.hostname
-        echo "audience=", audience
-
-        var headers: PSlist
-        headers = slist_append(headers, "Content-Type: application/octet-stream")
-        headers = slist_append(headers, "Content-Encoding: aes128gcm")
-        headers = slist_append(headers, "TTL: 2419200")
-        headers = slist_append(headers, "Authorization: " &
-                    getVapidAuthorization(audience, VapidSubject, ServerPubEnc, vapidPrvKey))
-
-        var outbuf: ref string = new string
-        let curl: Pcurl = easy_init()
-        discard curl.easy_setopt(OPT_VERBOSE, 1)
-        discard curl.easy_setopt(OPT_URL, endpoint.cstring)
-        discard curl.easy_setopt(OPT_POST, 1)
-        discard curl.easy_setopt(OPT_POSTFIELDS, addr payload[0])
-        discard curl.easy_setopt(OPT_POSTFIELDSIZE, payload.len)
-        discard curl.easy_setopt(OPT_WRITEDATA, outbuf)
-
-        proc writeCallback(buffer: cstring, size: int, nitems: int, outstream: pointer): int =
-          var outbuf = cast[ref string](outstream)
-          outbuf[] &= buffer
-          echo "outbuf len=", outbuf[].len
-          result = size * nitems
-
-        discard curl.easy_setopt(OPT_WRITEFUNCTION, writeCallback)
-        discard curl.easy_setopt(OPT_HTTPHEADER, headers)
-        let ret = curl.easy_perform()
-        curl.easy_cleanup()
-        echo ret, outbuf[]
-
-        return SendResult.Pending
+        return reqs.pending(PendingData(msg: data.toString(size)))
 
       onClose:
         echo "onClose"

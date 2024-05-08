@@ -287,7 +287,7 @@ proc br_hmac_drbg_get_hash*(ctx: ptr br_hmac_drbg_context): ptr br_hash_class {.
 ##
 
 type
-  br_prng_seeder* = proc (ctx: ptr ptr br_prng_class): cint {.cdecl.}
+  br_prng_seeder* = proc (ctx: ptr ptr br_prng_class): cint {.cdecl, gcsafe.}
 
 ## *
 ##  \brief Get a seeder backed by the operating system or hardware.

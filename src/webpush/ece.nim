@@ -606,6 +606,9 @@ import std/os
 const libecePath = currentSourcePath.parentDir() / "./lib"
 {.passL: libecePath / "libece.a".}
 
-const opensslPath = currentSourcePath.parentDir() / "./lib"
-{.passL: opensslPath / "libssl.a".}
-{.passL: opensslPath / "libcrypto.a".}
+when (compiles do: import caprese):
+  import capresepkg/openssl
+else:
+  const opensslPath = currentSourcePath.parentDir() / "./lib"
+  {.passL: opensslPath / "libssl.a".}
+  {.passL: opensslPath / "libcrypto.a".}

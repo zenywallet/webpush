@@ -606,9 +606,10 @@ import std/os
 const libecePath = currentSourcePath.parentDir() / "./lib"
 {.passL: libecePath / "libece.a".}
 
-when (compiles do: import caprese):
-  import capresepkg/openssl
-else:
-  const opensslPath = currentSourcePath.parentDir() / "./lib"
-  {.passL: opensslPath / "libssl.a".}
-  {.passL: opensslPath / "libcrypto.a".}
+when not defined(EXCLUDE_ECE_OPENSSL):
+  when (compiles do: import caprese):
+    import capresepkg/openssl
+  else:
+    const opensslPath = currentSourcePath.parentDir() / "./lib"
+    {.passL: opensslPath / "libssl.a".}
+    {.passL: opensslPath / "libcrypto.a".}

@@ -41,6 +41,26 @@ proc genKey*(): WebPushKeyPair =
   result.sk = br_ec_private_key(curve: sk.curve, x: addr result.prv[0], xlen: sk.xlen)
   result.pk = br_ec_public_key(curve: pk.curve, q: addr result.pub[0], qlen: pk.qlen)
 
+type Seed16Ctx* = object
+  obj*: br_prng_class
+  vtable*: ptr br_prng_class
+  seeder*: br_prng_seeder
+  data*: array[16, uint8]
+
+proc init*(seedCtx: var Seed16Ctx) =
+  seedCtx.obj.context_size = sizeof(Seed16Ctx).csize_t
+  assert cast[int](addr seedCtx.obj) == cast[int](addr seedCtx)
+  seedCtx.vtable = cast[ptr br_prng_class](addr seedCtx)
+  seedCtx.obj.update = proc (ctx: ptr ptr br_prng_class; seed: pointer; seed_len: csize_t) {.cdecl, gcsafe.} =
+    var ctx = cast[ptr ptr Seed16Ctx](ctx)
+    if seed_len < ctx.data.len.csize_t: raise
+    copyMem(addr ctx.data, seed, ctx.data.len)
+  seedCtx.seeder = br_prng_seeder_system(cast[cstringArray](nil))
+  if seedCtx.seeder(addr seedCtx.vtable) == 0: raise
+
+proc update*(seedCtx: var Seed16Ctx) =
+  if seedCtx.seeder(addr seedCtx.vtable) == 0: raise
+
 proc clear*(pair: var WebPushKeyPair) =
   zeroMem(addr pair.sk, sizeof(pair.sk))
   zeroMem(addr pair.pk, sizeof(pair.pk))

@@ -8,7 +8,6 @@ import bearssl/bearssl_hash
 import bearssl/bearssl_x509
 import bearssl/bearssl_pem
 import bytes
-export bytes
 
 const WebPushPrvKeyLen* = 32
 const WebPushPubKeyLen* = 65

@@ -11,6 +11,7 @@ import caprese
 import caprese/exec
 import ece
 import vapid
+import webpush
 
 const keyResult = staticExecCode:
   import std/marshal
@@ -342,6 +343,24 @@ type
 var reqs: Pendings[PendingData]
 reqs.newPending(limit = 100)
 
+import ece_keys
+
+type
+  uint8_t = uint8
+  uint32_t = uint32
+
+proc ece_webpush_aes128gcm_encrypt_plaintext*(
+                                   senderPrivKey: ptr uint8_t; ecvPubKey: ptr uint8_t;
+                                   authSecret: ptr uint8_t; authSecretLen: csize_t;
+                                   salt: ptr uint8_t; saltLen: csize_t;
+                                   rs: uint32_t; padLen: csize_t;
+                                   plaintext: ptr uint8_t; plaintextLen: csize_t;
+                                   payload: ptr uint8_t; payloadLen: ptr csize_t): cint {.importc, cdecl.}
+
+const NID_X9_62_prime256v1* = 415
+proc EC_KEY_new_by_curve_name*(nid: cint): EC_KEY {.importc, cdecl.}
+proc EC_KEY_generate_key*(key: EC_KEY): cint {.importc, cdecl.}
+
 worker(num = 2):
   reqs.recvLoop(req):
     var cmdData = parseJson(req.data.msg)
@@ -373,14 +392,26 @@ worker(num = 2):
     doAssert payloadLen > 0
 
     var payload = newSeq[byte](payloadLen)
-    var err = ece_webpush_aes128gcm_encrypt(addr rawRecvPubKey[0], rawRecvPubKeyLen,
-                                            addr authSecret[0], authSecretLen,
-                                            ECE_WEBPUSH_DEFAULT_RS, padLen,
-                                            cast[ptr byte](plaintext.cstring), plaintext.len.csize_t,
-                                            addr payload[0], addr payloadLen)
+    var recvPubKey = ece_import_public_key(addr rawRecvPubKey[0], rawRecvPubKeyLen);
+    var senderPrivKey = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1)
+    echo EC_KEY_generate_key(senderPrivKey)
+    var seedCtx: Seed16Ctx
+    seedCtx.init()
+    var senderKey = genKey()
+    echo senderKey
+    echo "seedCtx.data=", seedCtx.data
+    var err = ece_webpush_aes128gcm_encrypt_plaintext(
+                cast[ptr uint8](senderPrivKey), cast[ptr uint8](recvPubKey),
+                addr authSecret[0], authSecretLen,
+                addr seedCtx.data[0], ECE_SALT_LENGTH,
+                ECE_WEBPUSH_DEFAULT_RS, padLen,
+                cast[ptr byte](plaintext.cstring), plaintext.len.csize_t,
+                addr payload[0], addr payloadLen)
     doAssert err == ECE_OK
     payload.setLen(payloadLen)
     echo "payload=", payload
+    senderKey.clear()
+
 
     var url = parseUri(endpoint)
     var audience = url.scheme & "://" & url.hostname

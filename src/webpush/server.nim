@@ -429,8 +429,8 @@ server(ssl = true, ip = "0.0.0.0", port = 58009):
         echo "onOpen"
 
       onMessage:
-        echo "data=", data.toString(size)
-        reqs.pending(PendingData(msg: data.toString(size)))
+        echo "data=", content
+        reqs.pending(PendingData(msg: content))
 
       onClose:
         echo "onClose"

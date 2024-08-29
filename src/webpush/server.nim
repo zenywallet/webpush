@@ -417,12 +417,12 @@ worker(num = 2):
 server(ssl = true, ip = "0.0.0.0", port = 58009):
   routes:
     echo reqUrl()
-    get "/": return IndexHtml.content.response
-    get "/sw.js": return ServiceWorkerJs.content("js").response
-    get "/webpush.js": return WebPushJs.content("js").response
-    get "/site.webmanifest": return SiteManifest.content("json").response
-    get "/icon-512x512.png": return ICON_512.content("png").response
-    get "/icon-128x128.png": return ICON_128.content("png").response
+    get "/": IndexHtml.content.response
+    get "/sw.js": ServiceWorkerJs.content("js").response
+    get "/webpush.js": WebPushJs.content("js").response
+    get "/site.webmanifest": SiteManifest.content("json").response
+    get "/icon-512x512.png": ICON_512.content("png").response
+    get "/icon-128x128.png": ICON_128.content("png").response
 
     stream "/ws":
       onOpen:
@@ -430,11 +430,11 @@ server(ssl = true, ip = "0.0.0.0", port = 58009):
 
       onMessage:
         echo "data=", data.toString(size)
-        return reqs.pending(PendingData(msg: data.toString(size)))
+        reqs.pending(PendingData(msg: data.toString(size)))
 
       onClose:
         echo "onClose"
 
-    return "Not found".addHeader(Status404).send
+    "Not found".addHeader(Status404).send
 
 serverStart()

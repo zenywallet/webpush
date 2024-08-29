@@ -8,7 +8,7 @@ import std/base64
 import std/uri
 import libcurl
 import caprese
-import capresepkg/exec
+import caprese/exec
 import ece
 import vapid
 

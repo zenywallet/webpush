@@ -382,11 +382,19 @@ worker(num = 2):
     var rawRecvPubKeyLen = ece_base64url_decode((addr p256dh[0]).cstring, p256dh.len.csize_t, ECE_BASE64URL_REJECT_PADDING,
                                                 addr rawRecvPubKey[0], ECE_WEBPUSH_PUBLIC_KEY_LENGTH)
     doAssert rawRecvPubKeyLen > 0
+    echo "rawRecvPubKey=", rawRecvPubKey.toHex
+
+    var rawRecvPubKey2 = decode(p256dh)
+    echo "rawRecvPubKey2=", bytes.toHex(cast[seq[byte]](rawRecvPubKey2))
 
     var authSecret: array[ECE_WEBPUSH_AUTH_SECRET_LENGTH, byte]
     var authSecretLen = ece_base64url_decode((addr auth[0]).cstring, auth.len.csize_t, ECE_BASE64URL_REJECT_PADDING,
                                             addr authSecret[0], ECE_WEBPUSH_AUTH_SECRET_LENGTH)
     doAssert authSecretLen > 0
+    echo "authSecret=", authSecret.toHex
+
+    var authSecret2 = decode(auth)
+    echo "authSecret2=", bytes.toHex(cast[seq[byte]](authSecret2))
 
     var padLen: csize_t = 0
     var payloadLen = ece_aes128gcm_payload_max_length(ECE_WEBPUSH_DEFAULT_RS,
@@ -394,7 +402,7 @@ worker(num = 2):
     doAssert payloadLen > 0
 
     var payload = newSeq[byte](payloadLen)
-    var recvPubKey = ece_import_public_key(addr rawRecvPubKey[0], rawRecvPubKeyLen);
+    var recvPubKey = ece_import_public_key(cast[ptr uint8](addr rawRecvPubKey2[0]), rawRecvPubKey2.len.csize_t);
     var senderPrivKey = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1)
     echo EC_KEY_generate_key(senderPrivKey)
     var seedCtx: Seed16Ctx
@@ -404,7 +412,7 @@ worker(num = 2):
     echo "seedCtx.data=", seedCtx.data
     var err = ece_webpush_aes128gcm_encrypt_plaintext(
                 cast[ptr uint8](senderPrivKey), cast[ptr uint8](recvPubKey),
-                addr authSecret[0], authSecretLen,
+                cast[ptr uint8](addr authSecret2[0]), authSecret2.len.csize_t,
                 addr seedCtx.data[0], ECE_SALT_LENGTH,
                 ECE_WEBPUSH_DEFAULT_RS, padLen,
                 cast[ptr byte](plaintext.cstring), plaintext.len.csize_t,

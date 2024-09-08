@@ -366,6 +366,8 @@ worker(num = 2):
     var cmdData = parseJson(req.data.msg)
     var pushSubscription = cmdData["data"]
     echo "json=", $pushSubscription
+    if pushSubscription.kind == JNull:
+      continue
     var endpoint = pushSubscription["endpoint"].getStr()
     echo "endpoint=", endpoint
     var auth = pushSubscription["keys"]["auth"].getStr()

@@ -360,6 +360,7 @@ proc ece_webpush_aes128gcm_encrypt_plaintext*(
 const NID_X9_62_prime256v1* = 415
 proc EC_KEY_new_by_curve_name*(nid: cint): EC_KEY {.importc, cdecl.}
 proc EC_KEY_generate_key*(key: EC_KEY): cint {.importc, cdecl.}
+proc EC_KEY_free*(key: EC_KEY) {.importc, cdecl.}
 
 worker(num = 2):
   reqs.recvLoop(req):
@@ -421,6 +422,7 @@ worker(num = 2):
     payload.setLen(payloadLen)
     echo "payload=", payload
     senderKey.clear()
+    EC_KEY_free(senderPrivKey)
 
 
     var url = parseUri(endpoint)

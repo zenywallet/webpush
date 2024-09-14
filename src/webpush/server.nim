@@ -357,10 +357,15 @@ proc ece_webpush_aes128gcm_encrypt_plaintext*(
                                    plaintext: ptr uint8_t; plaintextLen: csize_t;
                                    payload: ptr uint8_t; payloadLen: ptr csize_t): cint {.importc, cdecl.}
 
+# include/openssl/type.h
+type
+  BN_CTX* = ptr object
+
 const NID_X9_62_prime256v1* = 415
 proc EC_KEY_new_by_curve_name*(nid: cint): EC_KEY {.importc, cdecl.}
 proc EC_KEY_generate_key*(key: EC_KEY): cint {.importc, cdecl.}
 proc EC_KEY_free*(key: EC_KEY) {.importc, cdecl.}
+proc EC_KEY_oct2key*(key: EC_KEY; buf: ptr cuchar; len: csize_t; ctx: BN_CTX): cint {.importc, cdecl.}
 
 worker(num = 2):
   reqs.recvLoop(req):
@@ -403,7 +408,9 @@ worker(num = 2):
     doAssert payloadLen > 0
 
     var payload = newSeq[byte](payloadLen)
-    var recvPubKey = ece_import_public_key(cast[ptr uint8](addr rawRecvPubKey2[0]), rawRecvPubKey2.len.csize_t)
+    #var recvPubKey = ece_import_public_key(cast[ptr uint8](addr rawRecvPubKey2[0]), rawRecvPubKey2.len.csize_t)
+    var recvPubKey = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1)
+    echo EC_KEY_oct2key(recvPubKey, cast[ptr cuchar](addr rawRecvPubKey2[0]), rawRecvPubKey2.len.csize_t, cast[BN_CTX](nil))
     var senderPrivKey = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1)
     echo EC_KEY_generate_key(senderPrivKey)
     var seedCtx: Seed16Ctx
@@ -423,6 +430,7 @@ worker(num = 2):
     echo "payload=", payload
     senderKey.clear()
     EC_KEY_free(senderPrivKey)
+    EC_KEY_free(recvPubKey)
 
 
     var url = parseUri(endpoint)

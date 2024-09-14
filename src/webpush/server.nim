@@ -402,7 +402,7 @@ worker(num = 2):
     doAssert payloadLen > 0
 
     var payload = newSeq[byte](payloadLen)
-    var recvPubKey = ece_import_public_key(cast[ptr uint8](addr rawRecvPubKey2[0]), rawRecvPubKey2.len.csize_t);
+    var recvPubKey = ece_import_public_key(cast[ptr uint8](addr rawRecvPubKey2[0]), rawRecvPubKey2.len.csize_t)
     var senderPrivKey = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1)
     echo EC_KEY_generate_key(senderPrivKey)
     var seedCtx: Seed16Ctx

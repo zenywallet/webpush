@@ -15,7 +15,7 @@ type
     readyFlag: bool
     reconnectCount: int
 
-proc connect0*(stream: var Stream; url: cstring; protocols: JsObject; onOpen: proc();
+proc connect0*(stream: ref Stream; url: cstring; protocols: JsObject; onOpen: proc();
               onReady: proc(); onRecv: proc(data: Uint8Array); onClose: proc()) =
   stream.ws = newWebSocket(url, protocols)
   stream.ws.binaryType = "arraybuffer".cstring
@@ -52,7 +52,7 @@ proc connect0*(stream: var Stream; url: cstring; protocols: JsObject; onOpen: pr
     console.log(uint8ArrayToStr(data))
     onRecv(data)
 
-macro connect*(stream: var Stream; url: cstring; protocols: JsObject; body: untyped): untyped =
+macro connect*(stream: ref Stream; url: cstring; protocols: JsObject; body: untyped): untyped =
   var onOpen = newStmtList()
   var onReady = newStmtList()
   var onRecv = newStmtList()
@@ -71,22 +71,22 @@ macro connect*(stream: var Stream; url: cstring; protocols: JsObject; body: unty
     `stream`.connect0(`url`, `protocols`, proc() = `onOpen`, proc() = `onReady`,
                       proc(`data`: Uint8Array) = `onRecv`, proc() = `onClose`)
 
-macro connect*(stream: var Stream; url, protocol: cstring; body: untyped): untyped =
+macro connect*(stream: ref Stream; url, protocol: cstring; body: untyped): untyped =
   var protocols = quote do: `protocol`.toJs
   quote do:
     connect(`stream`, `url`, `protocols`, `body`)
 
-proc close*(stream: var Stream) =
+proc close*(stream: ref Stream) =
   if not stream.ws.isNil:
     stream.reconnectCount = 0
     stream.ws.close()
     stream.ws = jsNull
 
-proc send*(stream: var Stream; data: Uint8Array): bool {.discardable.} =
+proc send*(stream: ref Stream; data: Uint8Array): bool {.discardable.} =
   if stream.ws.readyState == WebSocket.OPEN:
     stream.ws.send(data)
 
-template ready*(stream: var Stream; body: untyped) =
+template ready*(stream: ref Stream; body: untyped) =
   block ready:
     proc bodyMain() {.async, discardable.} =
       while not stream.readyFlag:

@@ -52,7 +52,7 @@ const WebPushJsTmpl = staticScript:
   var appInst: KaraxInstance
   var notificationState = "".cstring
   var prevNotificationState = "".cstring
-  var stream: Stream
+  var stream = new Stream
 
   proc jq(selector: cstring): JsObject {.importcpp: "$$(#)".}
   converter futureConv(jsObj: JsObject): Future[JsObject] = cast[Future[JsObject]](jsObj)

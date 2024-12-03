@@ -76,6 +76,13 @@ macro connect*(stream: ref Stream; url, protocol: cstring; body: untyped): untyp
   quote do:
     connect(`stream`, `url`, `protocols`, `body`)
 
+macro connect*(stream: ref Stream; url, protocol: cstring): untyped =
+  var protocols = quote do: `protocol`.toJs
+  var data = ident"data"
+  quote do:
+    `stream`.connect0(`url`, `protocols`, proc() = discard, proc() = discard,
+                      proc(`data`: Uint8Array) = discard, proc() = discard)
+
 proc close*(stream: ref Stream) =
   if not stream.ws.isNil:
     stream.reconnectCount = 0
